@@ -4,7 +4,6 @@ import (
 	"slices"
 
 	"github.com/goreleaser/goreleaser/v2/internal/tmpl"
-	"github.com/goreleaser/goreleaser/v2/pkg/config"
 )
 
 const keyAbi = "Abi"
@@ -47,8 +46,6 @@ func convertToGoarch(s string) string {
 		return "arm64"
 	case "x86_64":
 		return "amd64"
-	case "i386":
-		return "386"
 	default:
 		return s
 	}
@@ -121,11 +118,7 @@ func isValid(target string) bool {
 	}, target)
 }
 
-func targets(b config.Build) []string {
-	if len(b.Targets) > 0 {
-		return b.Targets
-	}
-
+func defaultTargets() []string {
 	return []string{
 		"x86_64-linux",
 		"x86_64-macos",

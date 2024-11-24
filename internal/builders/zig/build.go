@@ -53,7 +53,10 @@ func (b *Builder) Parse(target string) (api.Target, error) {
 // WithDefaults implements build.Builder.
 func (b *Builder) WithDefaults(build config.Build) (config.Build, error) {
 	log.Warn("you are using the experimental Zig builder")
-	build.Targets = targets(build)
+
+	if len(build.Targets) == 0 {
+		build.Targets = defaultTargets()
+	}
 
 	if build.GoBinary == "" {
 		build.GoBinary = "zig"
@@ -105,6 +108,10 @@ func (b *Builder) WithDefaults(build config.Build) (config.Build, error) {
 		return build, errors.New("asmtags is not used for zig")
 	}
 
+	if len(build.BuildDetailsOverrides) > 0 {
+		return build, errors.New("overrides is not used for zig")
+	}
+
 	for _, t := range build.Targets {
 		if !isValid(t) {
 			return build, fmt.Errorf("invalid target: %s", t)
@@ -134,22 +141,28 @@ func (b *Builder) Build(ctx *context.Context, build config.Build, options api.Op
 		},
 	}
 
-	gobin, err := tmpl.New(ctx).WithBuildOptions(options).Apply(build.GoBinary)
+	env := []string{}
+	env = append(env, ctx.Env.Strings()...)
+
+	tpl := tmpl.New(ctx).
+		WithBuildOptions(options).
+		WithEnvS(env).
+		WithArtifact(a)
+
+	zigbin, err := tpl.Apply(build.GoBinary)
 	if err != nil {
 		return err
 	}
 
 	command := []string{
-		gobin,
+		zigbin,
 		build.Command,
 		"-Dtarget=" + t.Target,
 		"-p", prefix,
 	}
 
-	env := []string{}
-	env = append(env, ctx.Env.Strings()...)
 	for _, e := range build.Env {
-		ee, err := tmpl.New(ctx).WithEnvS(env).WithArtifact(a).Apply(e)
+		ee, err := tpl.Apply(e)
 		if err != nil {
 			return err
 		}
@@ -159,7 +172,13 @@ func (b *Builder) Build(ctx *context.Context, build config.Build, options api.Op
 		}
 	}
 
-	// TODO: flags tpl
+	tpl = tpl.WithEnvS(env)
+
+	flags, err := processFlags(tpl, build.Flags)
+	if err != nil {
+		return err
+	}
+	command = append(command, flags...)
 
 	/* #nosec */
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
@@ -174,14 +193,30 @@ func (b *Builder) Build(ctx *context.Context, build config.Build, options api.Op
 		log.WithField("cmd", command).Info(s)
 	}
 
-	modTimestamp, err := tmpl.New(ctx).WithEnvS(env).WithArtifact(a).Apply(build.ModTimestamp)
+	// TODO: move this to outside builder for both go and zig
+	modTimestamp, err := tpl.Apply(build.ModTimestamp)
 	if err != nil {
 		return err
 	}
-	if err := gio.Chtimes(options.Path, modTimestamp); err != nil {
+	if err := gio.Chtimes(a.Path, modTimestamp); err != nil {
 		return err
 	}
 
 	ctx.Artifacts.Add(a)
 	return nil
+}
+
+func processFlags(tpl *tmpl.Template, flags []string) ([]string, error) {
+	var processed []string
+	for _, rawFlag := range flags {
+		flag, err := tpl.Apply(rawFlag)
+		if err != nil {
+			return nil, err
+		}
+		if flag == "" {
+			continue
+		}
+		processed = append(processed, flag)
+	}
+	return processed, nil
 }
