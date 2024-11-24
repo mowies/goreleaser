@@ -159,51 +159,18 @@ func doBuild(ctx *context.Context, build config.Build, opts builders.Options) er
 	return builders.For(build.Builder).Build(ctx, build, opts)
 }
 
-func splitTarget(build config.Build, target string) []string {
-	switch build.Builder {
-	case "zig":
-		return strings.Split(target, "-")
-	default:
-		return strings.Split(target, "_")
-	}
-}
-
 // TODO: this should probably go somewhere else?
 func buildOptionsForTarget(ctx *context.Context, build config.Build, target string) (*builders.Options, error) {
 	ext := extFor(target, build.BuildDetails)
-	parts := splitTarget(build, target)
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("%s is not a valid build target", target)
-	}
-
-	goos := parts[0]
-	goarch := parts[1]
-
 	buildOpts := builders.Options{
-		Target: target,
-		Ext:    ext,
-		Goos:   goos,
-		Goarch: goarch,
+		Ext: ext,
 	}
 
-	if len(parts) > 2 {
-		//nolint:gocritic
-		if strings.HasPrefix(goarch, "amd64") {
-			buildOpts.Goamd64 = parts[2]
-		} else if goarch == "386" {
-			buildOpts.Go386 = parts[2]
-		} else if strings.HasPrefix(goarch, "arm64") {
-			buildOpts.Goarm64 = parts[2]
-		} else if strings.HasPrefix(goarch, "arm") {
-			buildOpts.Goarm = parts[2]
-		} else if strings.HasPrefix(goarch, "mips") {
-			buildOpts.Gomips = parts[2]
-		} else if strings.HasPrefix(goarch, "ppc64") {
-			buildOpts.Goppc64 = parts[2]
-		} else if goarch == "riscv64" {
-			buildOpts.Goriscv64 = parts[2]
-		}
+	t, err := builders.For(build.Builder).Parse(target)
+	if err != nil {
+		return nil, err
 	}
+	buildOpts.Target = t
 
 	bin, err := tmpl.New(ctx).WithBuildOptions(buildOpts).Apply(build.Binary)
 	if err != nil {
@@ -211,7 +178,7 @@ func buildOptionsForTarget(ctx *context.Context, build config.Build, target stri
 	}
 
 	name := bin + ext
-	dir := fmt.Sprintf("%s_%s", build.ID, target)
+	dir := fmt.Sprintf("%s_%s", build.ID, t)
 	noUnique, err := tmpl.New(ctx).Bool(build.NoUniqueDistDir)
 	if err != nil {
 		return nil, err

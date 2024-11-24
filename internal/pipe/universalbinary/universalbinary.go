@@ -49,15 +49,26 @@ func (Pipe) Default(ctx *context.Context) error {
 	return ids.Validate()
 }
 
+type unitarget struct{}
+
+// for zig, this would be "macos" instead of "darwin", not sure how bad this is
+// yet.
+func (unitarget) String() string { return "darwin_all" }
+
+func (unitarget) TemplateFields() map[string]string {
+	return map[string]string{
+		"Os":   "darwin",
+		"Arch": "all",
+	}
+}
+
 // Run the pipe.
 func (Pipe) Run(ctx *context.Context) error {
 	g := semerrgroup.NewSkipAware(semerrgroup.New(ctx.Parallelism))
 	for _, unibin := range ctx.Config.UniversalBinaries {
 		g.Go(func() error {
 			opts := build.Options{
-				Target: "darwin_all",
-				Goos:   "darwin",
-				Goarch: "all",
+				Target: unitarget{},
 			}
 			if !skips.Any(ctx, skips.PreBuildHooks) {
 				if err := runHook(ctx, &opts, unibin.Hooks.Pre); err != nil {

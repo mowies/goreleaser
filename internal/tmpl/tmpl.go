@@ -199,21 +199,16 @@ func (t *Template) WithBuildOptions(opts build.Options) *Template {
 }
 
 func buildOptsToFields(opts build.Options) Fields {
-	return Fields{
-		target:  opts.Target,
-		ext:     opts.Ext,
-		name:    opts.Name,
-		path:    opts.Path,
-		osKey:   opts.Goos,
-		arch:    opts.Goarch,
-		amd64:   opts.Goamd64,
-		go386:   opts.Go386,
-		arm:     opts.Goarm,
-		arm64:   opts.Goarm64,
-		mips:    opts.Gomips,
-		ppc64:   opts.Goppc64,
-		riscv64: opts.Goriscv64,
+	f := Fields{
+		target: opts.Target.String(),
+		ext:    opts.Ext,
+		name:   opts.Name,
+		path:   opts.Path,
 	}
+	for k, v := range opts.Target.TemplateFields() {
+		f[k] = v
+	}
+	return f
 }
 
 // Bool Apply the given string, and converts it to a bool.

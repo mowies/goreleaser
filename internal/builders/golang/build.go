@@ -38,6 +38,44 @@ func init() {
 // Builder is golang builder.
 type Builder struct{}
 
+// Parse implements build.Builder.
+func (b *Builder) Parse(target string) (api.Target, error) {
+	parts := strings.Split(target, "_")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("%s is not a valid build target", target)
+	}
+
+	goos := parts[0]
+	goarch := parts[1]
+
+	t := Target{
+		Target: target,
+		Goos:   goos,
+		Goarch: goarch,
+	}
+
+	if len(parts) > 2 {
+		//nolint:gocritic
+		if strings.HasPrefix(goarch, "amd64") {
+			t.Goamd64 = parts[2]
+		} else if goarch == "386" {
+			t.Go386 = parts[2]
+		} else if strings.HasPrefix(goarch, "arm64") {
+			t.Goarm64 = parts[2]
+		} else if strings.HasPrefix(goarch, "arm") {
+			t.Goarm = parts[2]
+		} else if strings.HasPrefix(goarch, "mips") {
+			t.Gomips = parts[2]
+		} else if strings.HasPrefix(goarch, "ppc64") {
+			t.Goppc64 = parts[2]
+		} else if goarch == "riscv64" {
+			t.Goriscv64 = parts[2]
+		}
+	}
+
+	return t, nil
+}
+
 // WithDefaults sets the defaults for a golang build and returns it.
 func (*Builder) WithDefaults(build config.Build) (config.Build, error) {
 	if build.GoBinary == "" {
@@ -187,20 +225,22 @@ func (*Builder) Build(ctx *context.Context, build config.Build, options api.Opti
 		return err
 	}
 
+	t := options.Target.(Target)
+
 	a := &artifact.Artifact{
 		Type:      artifact.Binary,
 		Path:      options.Path,
 		Name:      options.Name,
-		Goos:      options.Goos,
-		Goarch:    options.Goarch,
-		Goamd64:   options.Goamd64,
-		Go386:     options.Go386,
-		Goarm:     options.Goarm,
-		Goarm64:   options.Goarm64,
-		Gomips:    options.Gomips,
-		Goppc64:   options.Goppc64,
-		Goriscv64: options.Goriscv64,
-		Target:    options.Target,
+		Goos:      t.Goos,
+		Goarch:    t.Goarch,
+		Goamd64:   t.Goamd64,
+		Go386:     t.Go386,
+		Goarm:     t.Goarm,
+		Goarm64:   t.Goarm64,
+		Gomips:    t.Gomips,
+		Goppc64:   t.Goppc64,
+		Goriscv64: t.Goriscv64,
+		Target:    t.Target,
 		Extra: map[string]interface{}{
 			artifact.ExtraBinary: strings.TrimSuffix(filepath.Base(options.Path), options.Ext),
 			artifact.ExtraExt:    options.Ext,
@@ -212,12 +252,12 @@ func (*Builder) Build(ctx *context.Context, build config.Build, options api.Opti
 		a.Type = artifact.CArchive
 		ctx.Artifacts.Add(getHeaderArtifactForLibrary(build, options))
 	}
-	if build.Buildmode == "c-shared" && !strings.Contains(options.Target, "wasm") {
+	if build.Buildmode == "c-shared" && !strings.Contains(t.Target, "wasm") {
 		a.Type = artifact.CShared
 		ctx.Artifacts.Add(getHeaderArtifactForLibrary(build, options))
 	}
 
-	details, err := withOverrides(ctx, build, options)
+	details, err := withOverrides(ctx, build, t)
 	if err != nil {
 		return err
 	}
@@ -241,16 +281,16 @@ func (*Builder) Build(ctx *context.Context, build config.Build, options api.Opti
 	}
 	env = append(
 		env,
-		"GOOS="+options.Goos,
-		"GOARCH="+options.Goarch,
-		"GOAMD64="+options.Goamd64,
-		"GO386="+options.Go386,
-		"GOARM="+options.Goarm,
-		"GOARM64="+options.Goarm64,
-		"GOMIPS="+options.Gomips,
-		"GOMIPS64="+options.Gomips,
-		"GOPPC64="+options.Goppc64,
-		"GORISCV64="+options.Goriscv64,
+		"GOOS="+t.Goos,
+		"GOARCH="+t.Goarch,
+		"GOAMD64="+t.Goamd64,
+		"GO386="+t.Go386,
+		"GOARM="+t.Goarm,
+		"GOARM64="+t.Goarm64,
+		"GOMIPS="+t.Gomips,
+		"GOMIPS64="+t.Gomips,
+		"GOPPC64="+t.Goppc64,
+		"GORISCV64="+t.Goriscv64,
 	)
 
 	if v := os.Getenv("GOCACHEPROG"); v != "" {
@@ -282,9 +322,9 @@ func (*Builder) Build(ctx *context.Context, build config.Build, options api.Opti
 	return nil
 }
 
-func withOverrides(ctx *context.Context, build config.Build, options api.Options) (config.BuildDetails, error) {
-	optsTarget := options.Goos + "_" + options.Goarch
-	if extra := options.Goamd64 + options.Go386 + options.Goarm + options.Goarm64 + options.Gomips + options.Goppc64 + options.Goriscv64; extra != "" {
+func withOverrides(ctx *context.Context, build config.Build, target Target) (config.BuildDetails, error) {
+	optsTarget := target.Goos + "_" + target.Goarch
+	if extra := target.Goamd64 + target.Go386 + target.Goarm + target.Goarm64 + target.Gomips + target.Goppc64 + target.Goriscv64; extra != "" {
 		optsTarget += "_" + extra
 	}
 	optsTarget = fixTarget(optsTarget)
@@ -523,20 +563,22 @@ func getHeaderArtifactForLibrary(build config.Build, options api.Options) *artif
 	fullPath := fullPathWithoutExt + ".h"
 	headerName := basePath + ".h"
 
+	t := options.Target.(Target)
+
 	return &artifact.Artifact{
 		Type:      artifact.Header,
 		Path:      fullPath,
 		Name:      headerName,
-		Goos:      options.Goos,
-		Goarch:    options.Goarch,
-		Goamd64:   options.Goamd64,
-		Go386:     options.Go386,
-		Goarm:     options.Goarm,
-		Goarm64:   options.Goarm64,
-		Gomips:    options.Gomips,
-		Goppc64:   options.Goppc64,
-		Goriscv64: options.Goriscv64,
-		Target:    options.Target,
+		Goos:      t.Goos,
+		Goarch:    t.Goarch,
+		Goamd64:   t.Goamd64,
+		Go386:     t.Go386,
+		Goarm:     t.Goarm,
+		Goarm64:   t.Goarm64,
+		Gomips:    t.Gomips,
+		Goppc64:   t.Goppc64,
+		Goriscv64: t.Goriscv64,
+		Target:    t.Target,
 		Extra: map[string]interface{}{
 			artifact.ExtraBinary: headerName,
 			artifact.ExtraExt:    ".h",

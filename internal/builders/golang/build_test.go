@@ -429,30 +429,14 @@ func TestBuild(t *testing.T) {
 		// injecting some delay here to force inconsistent mod times on bins
 		time.Sleep(2 * time.Second)
 
-		parts := strings.Split(target, "_")
-		goos := parts[0]
-		goarch := parts[1]
-		goarm := ""
-		gomips := ""
-		if len(parts) > 2 {
-			if strings.Contains(goarch, "arm") {
-				goarm = parts[2]
-			}
-			if strings.Contains(goarch, "mips") {
-				gomips = parts[2]
-			}
-		}
-		err := Default.Build(ctx, build, api.Options{
-			Target: target,
+		gtarget, err := Default.Parse(target)
+		require.NoError(t, err)
+		require.NoError(t, Default.Build(ctx, build, api.Options{
+			Target: gtarget,
 			Name:   bin + ext,
 			Path:   filepath.Join(folder, "dist", target, bin+ext),
-			Goos:   goos,
-			Goarch: goarch,
-			Goarm:  goarm,
-			Gomips: gomips,
 			Ext:    ext,
-		})
-		require.NoError(t, err)
+		}))
 	}
 	list := ctx.Artifacts
 	require.NoError(t, list.Visit(func(a *artifact.Artifact) error {

@@ -30,85 +30,24 @@ func init() {
 // Builder is golang builder.
 type Builder struct{}
 
-// generated using ./testdata/targets.sh
-// not sure if this is correct, but for now, leaving out targets that fail to
-// compile a simple C program.
-func isValid(target string) bool {
-	return slices.Contains([]string{
-		"aarch64-linux",
-		"aarch64-linux-gnu",
-		"aarch64-linux-musl",
-		"aarch64-macos",
-		"aarch64-macos-none",
-		"aarch64-windows",
-		"aarch64-windows-gnu",
-		"aarch64_be-linux",
-		"aarch64_be-linux-gnu",
-		"aarch64_be-linux-musl",
-		"arm-linux",
-		"arm-linux-gnueabi",
-		"arm-linux-gnueabihf",
-		"arm-linux-musleabi",
-		"arm-linux-musleabihf",
-		"mips-linux",
-		"mips-linux-gnueabi",
-		"mips-linux-gnueabihf",
-		"mips-linux-musl",
-		"mips64-linux",
-		"mips64-linux-gnuabi64",
-		"mips64-linux-gnuabin32",
-		"mips64-linux-musl",
-		"mips64el-linux",
-		"mips64el-linux-gnuabi64",
-		"mips64el-linux-gnuabin32",
-		"mips64el-linux-musl",
-		"mipsel-linux",
-		"mipsel-linux-gnueabi",
-		"mipsel-linux-gnueabihf",
-		"mipsel-linux-musl",
-		"powerpc-linux",
-		"powerpc-linux-musl",
-		"powerpc64-linux",
-		"powerpc64-linux-gnu",
-		"powerpc64-linux-musl",
-		"powerpc64le-linux",
-		"powerpc64le-linux-gnu",
-		"powerpc64le-linux-musl",
-		"riscv64-linux",
-		"riscv64-linux-musl",
-		"thumb-linux",
-		"thumb-linux-musleabi",
-		"thumb-linux-musleabihf",
-		"wasm32-wasi",
-		"wasm32-wasi-musl",
-		"x86-linux",
-		"x86-linux-gnu",
-		"x86-linux-musl",
-		"x86-windows",
-		"x86-windows-gnu",
-		"x86_64-linux",
-		"x86_64-linux-gnu",
-		"x86_64-linux-gnux32",
-		"x86_64-linux-musl",
-		"x86_64-macos",
-		"x86_64-macos-none",
-		"x86_64-windows",
-		"x86_64-windows-gnu",
-	}, target)
-}
-
-func targets(b config.Build) []string {
-	if len(b.Targets) > 0 {
-		return b.Targets
+// Parse implements build.Builder.
+func (b *Builder) Parse(target string) (api.Target, error) {
+	parts := strings.Split(target, "-")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("%s is not a valid build target", target)
 	}
 
-	return []string{
-		"x86_64-linux",
-		"x86_64-macos",
-		"x86_64-windows",
-		"aarch64-linux",
-		"aarch64-macos",
+	t := Target{
+		Target: target,
+		Os:     convertToGoos(parts[1]),
+		Arch:   convertToGoarch(parts[0]),
 	}
+
+	if len(parts) > 2 {
+		t.Abi = parts[2]
+	}
+
+	return t, nil
 }
 
 // WithDefaults implements build.Builder.
@@ -179,20 +118,15 @@ func (b *Builder) WithDefaults(build config.Build) (config.Build, error) {
 func (b *Builder) Build(ctx *context.Context, build config.Build, options api.Options) error {
 	prefix := filepath.Dir(options.Path)
 	options.Path = filepath.Join(prefix, "bin", options.Name)
+
+	t := options.Target.(Target)
 	a := &artifact.Artifact{
-		Type:      artifact.Binary,
-		Path:      options.Path,
-		Name:      options.Name,
-		Goos:      options.Goos,
-		Goarch:    options.Goarch,
-		Goamd64:   options.Goamd64,
-		Go386:     options.Go386,
-		Goarm:     options.Goarm,
-		Goarm64:   options.Goarm64,
-		Gomips:    options.Gomips,
-		Goppc64:   options.Goppc64,
-		Goriscv64: options.Goriscv64,
-		Target:    options.Target,
+		Type:   artifact.Binary,
+		Path:   options.Path,
+		Name:   options.Name,
+		Goos:   convertToGoos(t.Os),
+		Goarch: convertToGoarch(t.Arch),
+		Target: t.Target,
 		Extra: map[string]interface{}{
 			artifact.ExtraBinary: strings.TrimSuffix(filepath.Base(options.Path), options.Ext),
 			artifact.ExtraExt:    options.Ext,
@@ -208,7 +142,7 @@ func (b *Builder) Build(ctx *context.Context, build config.Build, options api.Op
 	command := []string{
 		gobin,
 		build.Command,
-		"-Dtarget=" + options.Target,
+		"-Dtarget=" + t.Target,
 		"-p", prefix,
 	}
 
