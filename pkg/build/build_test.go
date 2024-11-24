@@ -8,7 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type dummyTarget struct{}
+
+// String implements Target.
+func (d dummyTarget) String() string {
+	return "dummy"
+}
+
+// TemplateFields implements Target.
+func (d dummyTarget) TemplateFields() map[string]string {
+	return nil
+}
+
 type dummy struct{}
+
+// Parse implements Builder.
+func (d *dummy) Parse(target string) (Target, error) {
+	return dummyTarget{}, nil
+}
 
 func (*dummy) WithDefaults(build config.Build) (config.Build, error) {
 	return build, nil

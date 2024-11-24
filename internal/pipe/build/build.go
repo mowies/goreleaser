@@ -159,7 +159,6 @@ func doBuild(ctx *context.Context, build config.Build, opts builders.Options) er
 	return builders.For(build.Builder).Build(ctx, build, opts)
 }
 
-// TODO: this should probably go somewhere else?
 func buildOptionsForTarget(ctx *context.Context, build config.Build, target string) (*builders.Options, error) {
 	ext := extFor(target, build.BuildDetails)
 	buildOpts := builders.Options{

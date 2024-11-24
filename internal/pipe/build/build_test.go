@@ -24,9 +24,26 @@ var (
 	errFailedDefault = errors.New("fake builder defaults failed")
 )
 
+type fakeTarget struct{}
+
+// String implements build.Target.
+func (f fakeTarget) String() string {
+	return "fake"
+}
+
+// TemplateFields implements build.Target.
+func (f fakeTarget) TemplateFields() map[string]string {
+	return nil
+}
+
 type fakeBuilder struct {
 	fail        bool
 	failDefault bool
+}
+
+// Parse implements build.Builder.
+func (f *fakeBuilder) Parse(target string) (api.Target, error) {
+	return fakeTarget{}, nil
 }
 
 func (f *fakeBuilder) WithDefaults(build config.Build) (config.Build, error) {
