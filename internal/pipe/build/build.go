@@ -21,6 +21,7 @@ import (
 
 	// langs to init.
 	_ "github.com/goreleaser/goreleaser/v2/internal/builders/golang"
+	_ "github.com/goreleaser/goreleaser/v2/internal/builders/zig"
 )
 
 // Pipe for build.
@@ -158,9 +159,19 @@ func doBuild(ctx *context.Context, build config.Build, opts builders.Options) er
 	return builders.For(build.Builder).Build(ctx, build, opts)
 }
 
+func splitTarget(build config.Build, target string) []string {
+	switch build.Builder {
+	case "zig":
+		return strings.Split(target, "-")
+	default:
+		return strings.Split(target, "_")
+	}
+}
+
+// TODO: this should probably go somewhere else?
 func buildOptionsForTarget(ctx *context.Context, build config.Build, target string) (*builders.Options, error) {
 	ext := extFor(target, build.BuildDetails)
-	parts := strings.Split(target, "_")
+	parts := splitTarget(build, target)
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("%s is not a valid build target", target)
 	}

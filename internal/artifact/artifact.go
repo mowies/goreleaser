@@ -195,6 +195,7 @@ type Artifact struct {
 	Type      Type   `json:"internal_type,omitempty"`
 	TypeS     string `json:"type,omitempty"`
 	Extra     Extras `json:"extra,omitempty"`
+	Target    string `json:"target,omitempty"`
 }
 
 func (a Artifact) String() string {
