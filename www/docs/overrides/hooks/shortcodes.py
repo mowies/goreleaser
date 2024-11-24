@@ -17,6 +17,7 @@ def on_page_markdown(markdown: str, *, page: Page, config: MkDocsConfig, files: 
         args = args.strip()
         if type == "version":     return _version_block(args)
         elif type == "pro":       return _pro_ad(page, files)
+        elif type == "alpha":       return _alpha_block()
         elif type == "featpro":       return _pro_feat_ad(page, files)
         elif type == "templates": return _templates_ad()
 
@@ -44,6 +45,10 @@ def _pro_ad(page: Page, files: Files):
         f"<p>One or more features are exclusively available with <a href=\"/pro/\">GoReleaser Pro</a>.</p>",
         f"</div>"
     ])
+
+
+def _alpha_block():
+    return f"> :material-flask-outline Experimental"
 
 def _version_block(text: str):
     return f"> Since :material-tag-outline: <a href=\"/blog/goreleaser-{text}\">{text}</a>."
