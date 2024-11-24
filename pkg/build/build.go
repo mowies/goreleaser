@@ -37,7 +37,7 @@ type Options struct {
 
 type Target interface {
 	fmt.Stringer
-	TemplateFields() map[string]string
+	Fields() map[string]string
 }
 
 // Builder defines a builder.

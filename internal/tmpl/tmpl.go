@@ -20,6 +20,19 @@ import (
 	"golang.org/x/text/language"
 )
 
+// Template fields names used in build targets and more.
+const (
+	KeyOS      = "Os"
+	KeyArch    = "Arch"
+	KeyAmd64   = "Amd64"
+	Key386     = "I386"
+	KeyArm     = "Arm"
+	KeyArm64   = "Arm64"
+	KeyMips    = "Mips"
+	KeyPpc64   = "Ppc64"
+	KeyRiscv64 = "Riscv64"
+)
+
 // Template holds data that can be applied to a template string.
 type Template struct {
 	fields Fields
@@ -67,15 +80,6 @@ const (
 	runtimeK        = "Runtime"
 
 	// artifact-only keys.
-	osKey        = "Os"
-	arch         = "Arch"
-	amd64        = "Amd64"
-	go386        = "I386"
-	arm          = "Arm"
-	arm64        = "Arm64"
-	mips         = "Mips"
-	ppc64        = "Ppc64"
-	riscv64      = "Riscv64"
 	binary       = "Binary"
 	artifactName = "ArtifactName"
 	artifactExt  = "ArtifactExt"
@@ -177,15 +181,15 @@ func (t *Template) WithEnv(e map[string]string) *Template {
 // WithArtifact populates Fields from the artifact.
 func (t *Template) WithArtifact(a *artifact.Artifact) *Template {
 	return t.WithExtraFields(Fields{
-		osKey:        a.Goos,
-		arch:         a.Goarch,
-		amd64:        a.Goamd64,
-		go386:        a.Go386,
-		arm:          a.Goarm,
-		arm64:        a.Goarm64,
-		mips:         a.Gomips,
-		ppc64:        a.Goppc64,
-		riscv64:      a.Goriscv64,
+		KeyOS:        a.Goos,
+		KeyArch:      a.Goarch,
+		KeyAmd64:     a.Goamd64,
+		Key386:       a.Go386,
+		KeyArm:       a.Goarm,
+		KeyArm64:     a.Goarm64,
+		KeyMips:      a.Gomips,
+		KeyPpc64:     a.Goppc64,
+		KeyRiscv64:   a.Goriscv64,
 		target:       a.Target,
 		binary:       artifact.ExtraOr(*a, binary, t.fields[projectName].(string)),
 		artifactName: a.Name,
@@ -205,7 +209,7 @@ func buildOptsToFields(opts build.Options) Fields {
 		name:   opts.Name,
 		path:   opts.Path,
 	}
-	for k, v := range opts.Target.TemplateFields() {
+	for k, v := range opts.Target.Fields() {
 		f[k] = v
 	}
 	return f

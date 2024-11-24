@@ -34,12 +34,12 @@ func (f fakeTarget) String() string {
 	return f.target
 }
 
-// TemplateFields implements build.Target.
-func (f fakeTarget) TemplateFields() map[string]string {
+// Fields implements build.Target.
+func (f fakeTarget) Fields() map[string]string {
 	os, arch, _ := strings.Cut(f.target, "_")
 	return map[string]string{
-		"Os":   os,
-		"Arch": arch,
+		tmpl.KeyOS:   os,
+		tmpl.KeyArch: arch,
 	}
 }
 

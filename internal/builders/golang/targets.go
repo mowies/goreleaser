@@ -1,5 +1,8 @@
 package golang
 
+import "github.com/goreleaser/goreleaser/v2/internal/tmpl"
+
+// Target is a Go build target.
 type Target struct {
 	Target    string
 	Goos      string
@@ -13,18 +16,18 @@ type Target struct {
 	Goriscv64 string
 }
 
-// TemplateFields implements build.Target.
-func (t Target) TemplateFields() map[string]string {
+// Fields implements build.Target.
+func (t Target) Fields() map[string]string {
 	return map[string]string{
-		"Os":      t.Goos,
-		"Arch":    t.Goarch,
-		"Amd64":   t.Goamd64,
-		"I386":    t.Go386,
-		"Arm":     t.Goarm,
-		"Arm64":   t.Goarm64,
-		"Mips":    t.Gomips,
-		"Ppc64":   t.Goppc64,
-		"Riscv64": t.Goriscv64,
+		tmpl.KeyOS:      t.Goos,
+		tmpl.KeyArch:    t.Goarch,
+		tmpl.KeyAmd64:   t.Goamd64,
+		tmpl.Key386:     t.Go386,
+		tmpl.KeyArm:     t.Goarm,
+		tmpl.KeyArm64:   t.Goarm64,
+		tmpl.KeyMips:    t.Gomips,
+		tmpl.KeyPpc64:   t.Goppc64,
+		tmpl.KeyRiscv64: t.Goriscv64,
 	}
 }
 

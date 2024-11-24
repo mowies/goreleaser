@@ -505,13 +505,13 @@ type testTarget struct {
 
 func (t testTarget) String() string { return t.Target }
 
-func (t testTarget) TemplateFields() map[string]string {
+func (t testTarget) Fields() map[string]string {
 	return map[string]string{
-		target: t.Target,
-		osKey:  t.Goos,
-		arch:   t.Goarch,
-		amd64:  t.Goamd64,
-		arm:    t.Goarm,
-		mips:   t.Gomips,
+		target:   t.Target,
+		KeyOS:    t.Goos,
+		KeyArch:  t.Goarch,
+		KeyAmd64: t.Goamd64,
+		KeyArm:   t.Goarm,
+		KeyMips:  t.Gomips,
 	}
 }

@@ -15,8 +15,8 @@ func (d dummyTarget) String() string {
 	return "dummy"
 }
 
-// TemplateFields implements Target.
-func (d dummyTarget) TemplateFields() map[string]string {
+// Fields implements Target.
+func (d dummyTarget) Fields() map[string]string {
 	return nil
 }
 

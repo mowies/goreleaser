@@ -3,32 +3,33 @@ package zig
 import (
 	"slices"
 
+	"github.com/goreleaser/goreleaser/v2/internal/tmpl"
 	"github.com/goreleaser/goreleaser/v2/pkg/config"
 )
 
+const keyAbi = "Abi"
+
+// Target is a Zig build target.
 type Target struct {
+	// The zig formatted target (arch-os-abi).
 	Target string
 	Os     string
 	Arch   string
 	Abi    string
 }
 
-// TemplateFields implements build.Target.
-func (t Target) TemplateFields() map[string]string {
+// Fields implements build.Target.
+func (t Target) Fields() map[string]string {
 	return map[string]string{
-		"Os":   t.Os,
-		"Arch": t.Arch,
-		"Abi":  t.Abi,
+		tmpl.KeyOS:   t.Os,
+		tmpl.KeyArch: t.Arch,
+		keyAbi:       t.Abi,
 	}
 }
 
 // String implements fmt.Stringer.
 func (t Target) String() string {
-	s := t.Os + "-" + t.Arch
-	if t.Abi != "" {
-		s += t.Abi
-	}
-	return s
+	return t.Target
 }
 
 func convertToGoos(s string) string {
