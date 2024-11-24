@@ -40,6 +40,7 @@ type Builder struct{}
 
 // Parse implements build.Builder.
 func (b *Builder) Parse(target string) (api.Target, error) {
+	target = fixTarget(target)
 	parts := strings.Split(target, "_")
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("%s is not a valid build target", target)

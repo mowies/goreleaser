@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/goreleaser/goreleaser/v2/internal/artifact"
@@ -24,16 +25,22 @@ var (
 	errFailedDefault = errors.New("fake builder defaults failed")
 )
 
-type fakeTarget struct{}
+type fakeTarget struct {
+	target string
+}
 
 // String implements build.Target.
 func (f fakeTarget) String() string {
-	return "fake"
+	return f.target
 }
 
 // TemplateFields implements build.Target.
 func (f fakeTarget) TemplateFields() map[string]string {
-	return nil
+	os, arch, _ := strings.Cut(f.target, "_")
+	return map[string]string{
+		"Os":   os,
+		"Arch": arch,
+	}
 }
 
 type fakeBuilder struct {
@@ -43,7 +50,7 @@ type fakeBuilder struct {
 
 // Parse implements build.Builder.
 func (f *fakeBuilder) Parse(target string) (api.Target, error) {
-	return fakeTarget{}, nil
+	return fakeTarget{target}, nil
 }
 
 func (f *fakeBuilder) WithDefaults(build config.Build) (config.Build, error) {
@@ -602,7 +609,7 @@ func TestBuildOptionsForTarget(t *testing.T) {
 	testCases := []struct {
 		name         string
 		build        config.Build
-		expectedOpts *api.Options
+		expectedOpts api.Options
 		expectedErr  string
 	}{
 		{
@@ -614,13 +621,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 					"linux_amd64",
 				},
 			},
-			expectedOpts: &api.Options{
-				Name:    "testbinary",
-				Path:    filepath.Join(tmpDir, "testid_linux_amd64_v1", "testbinary"),
-				Target:  "linux_amd64_v1",
-				Goos:    "linux",
-				Goarch:  "amd64",
-				Goamd64: "v1",
+			expectedOpts: api.Options{
+				Name: "testbinary",
+				Path: filepath.Join(tmpDir, "testid_linux_amd64_v1", "testbinary"),
 			},
 		},
 		{
@@ -632,13 +635,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 					"linux_amd64",
 				},
 			},
-			expectedOpts: &api.Options{
-				Name:    "testbinary_linux_amd64",
-				Path:    filepath.Join(tmpDir, "testid_linux_amd64_v1", "testbinary_linux_amd64"),
-				Target:  "linux_amd64_v1",
-				Goos:    "linux",
-				Goarch:  "amd64",
-				Goamd64: "v1",
+			expectedOpts: api.Options{
+				Name: "testbinary_linux_amd64",
+				Path: filepath.Join(tmpDir, "testid_linux_amd64_v1", "testbinary_linux_amd64"),
 			},
 		},
 		{
@@ -651,13 +650,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 				},
 				NoUniqueDistDir: `{{ printf "true"}}`,
 			},
-			expectedOpts: &api.Options{
-				Name:    "distpath/linux/amd64/testbinary",
-				Path:    filepath.Join(tmpDir, "distpath", "linux", "amd64", "testbinary"),
-				Target:  "linux_amd64_v1",
-				Goos:    "linux",
-				Goarch:  "amd64",
-				Goamd64: "v1",
+			expectedOpts: api.Options{
+				Name: "distpath/linux/amd64/testbinary",
+				Path: filepath.Join(tmpDir, "distpath", "linux", "amd64", "testbinary"),
 			},
 		},
 		{
@@ -670,13 +665,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 				},
 				NoUniqueDistDir: `{{ printf "false"}}`,
 			},
-			expectedOpts: &api.Options{
-				Name:    "testbinary",
-				Path:    filepath.Join(tmpDir, "testid_linux_amd64_v1", "testbinary"),
-				Target:  "linux_amd64_v1",
-				Goos:    "linux",
-				Goarch:  "amd64",
-				Goamd64: "v1",
+			expectedOpts: api.Options{
+				Name: "testbinary",
+				Path: filepath.Join(tmpDir, "testid_linux_amd64_v1", "testbinary"),
 			},
 		},
 		{
@@ -688,13 +679,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 					"linux_arm_6",
 				},
 			},
-			expectedOpts: &api.Options{
-				Name:   "testbinary",
-				Path:   filepath.Join(tmpDir, "testid_linux_arm_6", "testbinary"),
-				Target: "linux_arm_6",
-				Goos:   "linux",
-				Goarch: "arm",
-				Goarm:  "6",
+			expectedOpts: api.Options{
+				Name: "testbinary",
+				Path: filepath.Join(tmpDir, "testid_linux_arm_6", "testbinary"),
 			},
 		},
 		{
@@ -706,13 +693,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 					"linux_mips_softfloat",
 				},
 			},
-			expectedOpts: &api.Options{
-				Name:   "testbinary",
-				Path:   filepath.Join(tmpDir, "testid_linux_mips_softfloat", "testbinary"),
-				Target: "linux_mips_softfloat",
-				Goos:   "linux",
-				Goarch: "mips",
-				Gomips: "softfloat",
+			expectedOpts: api.Options{
+				Name: "testbinary",
+				Path: filepath.Join(tmpDir, "testid_linux_mips_softfloat", "testbinary"),
 			},
 		},
 		{
@@ -724,13 +707,9 @@ func TestBuildOptionsForTarget(t *testing.T) {
 					"linux_amd64_v3",
 				},
 			},
-			expectedOpts: &api.Options{
-				Name:    "testbinary",
-				Path:    filepath.Join(tmpDir, "testid_linux_amd64_v3", "testbinary"),
-				Target:  "linux_amd64_v3",
-				Goos:    "linux",
-				Goarch:  "amd64",
-				Goamd64: "v3",
+			expectedOpts: api.Options{
+				Name: "testbinary",
+				Path: filepath.Join(tmpDir, "testid_linux_amd64_v3", "testbinary"),
 			},
 		},
 	}
@@ -745,7 +724,8 @@ func TestBuildOptionsForTarget(t *testing.T) {
 			opts, err := buildOptionsForTarget(ctx, ctx.Config.Builds[0], ctx.Config.Builds[0].Targets[0])
 			if tc.expectedErr == "" {
 				require.NoError(t, err)
-				require.Equal(t, tc.expectedOpts, opts)
+				require.Equal(t, tc.expectedOpts.Name, opts.Name)
+				require.Equal(t, tc.expectedOpts.Path, opts.Path)
 			} else {
 				require.EqualError(t, err, tc.expectedErr)
 			}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/goreleaser/goreleaser/v2/internal/artifact"
+	"github.com/goreleaser/goreleaser/v2/internal/experimental"
 	"github.com/goreleaser/goreleaser/v2/internal/testctx"
 	"github.com/goreleaser/goreleaser/v2/internal/testlib"
 	"github.com/goreleaser/goreleaser/v2/internal/tmpl"
@@ -36,9 +37,64 @@ var go118FirstClassAdjustedTargets = []string{
 func TestParse(t *testing.T) {
 	for target, dst := range map[string]Target{
 		"linux_amd64": {
-			Target: "linux_amd64",
+			Target:  "linux_amd64_v1",
+			Goos:    "linux",
+			Goarch:  "amd64",
+			Goamd64: "v1",
+		},
+		"linux_amd64_v2": {
+			Target:  "linux_amd64_v2",
+			Goos:    "linux",
+			Goarch:  "amd64",
+			Goamd64: "v2",
+		},
+		"linux_arm": {
+			Target: "linux_arm_" + experimental.DefaultGOARM(),
 			Goos:   "linux",
-			Goarch: "amd64",
+			Goarch: "arm",
+			Goarm:  experimental.DefaultGOARM(),
+		},
+		"linux_arm_7": {
+			Target: "linux_arm_7",
+			Goos:   "linux",
+			Goarch: "arm",
+			Goarm:  "7",
+		},
+		"linux_mips": {
+			Target: "linux_mips_hardfloat",
+			Goos:   "linux",
+			Goarch: "mips",
+			Gomips: "hardfloat",
+		},
+		"linux_mips_softfloat": {
+			Target: "linux_mips_softfloat",
+			Goos:   "linux",
+			Goarch: "mips",
+			Gomips: "softfloat",
+		},
+		"linux_386": {
+			Target: "linux_386_sse2",
+			Goos:   "linux",
+			Goarch: "386",
+			Go386:  "sse2",
+		},
+		"linux_386_hardfloat": {
+			Target: "linux_386_hardfloat",
+			Goos:   "linux",
+			Goarch: "386",
+			Go386:  "hardfloat",
+		},
+		"linux_arm64": {
+			Target:  "linux_arm64_v8.0",
+			Goos:    "linux",
+			Goarch:  "arm64",
+			Goarm64: "v8.0",
+		},
+		"linux_arm64_v9.0": {
+			Target:  "linux_arm64_v9.0",
+			Goos:    "linux",
+			Goarch:  "arm64",
+			Goarm64: "v9.0",
 		},
 	} {
 		t.Run(target, func(t *testing.T) {
