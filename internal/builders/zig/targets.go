@@ -24,7 +24,11 @@ func (t Target) TemplateFields() map[string]string {
 
 // String implements fmt.Stringer.
 func (t Target) String() string {
-	return t.Os + "_" + t.Arch + "_" + t.Abi
+	s := t.Os + "-" + t.Arch
+	if t.Abi != "" {
+		s += t.Abi
+	}
+	return s
 }
 
 func convertToGoos(s string) string {
